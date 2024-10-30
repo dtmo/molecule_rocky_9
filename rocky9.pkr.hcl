@@ -150,16 +150,30 @@ build {
     ]
   }
 
+  # We want to configure the None datasource to set a password on the default
+  # cloud user account so that we can at least log into the console when we
+  # manually create a VM from the temaplte.
   provisioner "file" {
-    source = "${path.root}/scripts/shutdown.sh"
-    destination = "$XDG_RUNTIME_DIR/shutdown.sh"
+    content     = templatefile("${path.root}/templates/datasources.cfg.pkrtpl.hcl", {})
+    destination = "$XDG_RUNTIME_DIR/datasources.cfg"
   }
 
-  provisioner "file" {
-    source = "${path.root}/scripts/qemu-ga"
-    destination = "$XDG_RUNTIME_DIR/qemu-ga"
+  provisioner "shell" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "set -o pipefail",
+      "echo '${var.ssh_password}' | sudo -S cp $XDG_RUNTIME_DIR/datasources.cfg /etc/cloud/cloud.cfg.d/datasources.cfg",
+    ]
   }
 
+  # By default QEMU Guest Additions does not allow us to execute commands or get
+  # the status of executing commands. We want to be able to do this so that the
+  # Molecule driver can execute `cloud-init status --wait` to determine that
+  # Cloud-init has finished executing.
+  # Even with `guest-exec-status` and `guest-exec` enabled, SELinux also
+  # prevents the QEMU Guest Agent from executing the command, so we need to
+  # enable the `virt_qemu_ga_read_nonsecurity_files` boolean and also install
+  # a custom policy to allow it.
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; echo '${var.ssh_password}' | sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
     inline_shebang  = "/bin/bash -ex"
@@ -177,5 +191,13 @@ build {
       "dnf autoremove -y policycoreutils-python-utils",
       "dnf clean all",
     ]
+  }
+
+  # Finally, we drop the shutdown script into the XDG_RUNTIME_DIR so that it can
+  # perform cleanup in preparation for use as a template, without being included
+  # in the final image.
+  provisioner "file" {
+    source = "${path.root}/scripts/shutdown.sh"
+    destination = "$XDG_RUNTIME_DIR/shutdown.sh"
   }
 }
