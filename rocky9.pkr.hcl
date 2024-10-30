@@ -189,7 +189,6 @@ build {
       "EOT",
       "semodule -i /run/qemu_guest_agent_cloud_init_module.cil",
       "dnf autoremove -y policycoreutils-python-utils",
-      "dnf clean all",
     ]
   }
 
