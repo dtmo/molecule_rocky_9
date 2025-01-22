@@ -5,8 +5,8 @@ set -eo pipefail
 ## https://systemd.io/BUILDING_IMAGES/
 ## https://lonesysadmin.net/2013/03/26/preparing-linux-template-vms/
 
-# Remove /etc/machine-id
-cloud-init clean --logs --machine-id --seed --configs all
+# Prevent writing shell history
+set +o history
 
 # Remove the /var/lib/systemd/random-seed file
 rm /var/lib/systemd/random-seed
@@ -16,18 +16,6 @@ rm /etc/hostname
 
 # Remove SSH host keys
 rm -f /etc/ssh/*key*
-
-# Prevent writing shell history
-set +o history
-
-# Remove user accounts
-if getent passwd "$(logname)"; then
-    userdel --force --remove "$(logname)"
-fi
-
-if getent passwd "$(cloud-init query system_info.default_user.name)"; then
-    userdel --force --remove "$(cloud-init query system_info.default_user.name)"
-fi
 
 # Remove logs
 logrotate -f /etc/logrotate.conf
@@ -63,6 +51,18 @@ rm -f ~root/original-ks.cfg
 
 # Clean DNF
 dnf clean all
+
+# Remove user accounts
+if getent passwd "$(logname)"; then
+    userdel --force --remove "$(logname)"
+fi
+
+if getent passwd "$(cloud-init query system_info.default_user.name)"; then
+    userdel --force --remove "$(cloud-init query system_info.default_user.name)"
+fi
+
+# Remove /etc/machine-id
+cloud-init clean --logs --machine-id --seed --configs all
 
 # Zero out free space
 cat /dev/zero > ~root/zeros.file || sync && rm ~root/zeros.file
