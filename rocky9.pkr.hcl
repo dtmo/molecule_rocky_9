@@ -179,14 +179,14 @@ build {
     inline_shebang  = "/bin/bash -ex"
     inline = [
       "set -eo pipefail",
-      "cat <<EOT > /etc/sysconfig/qemu-ga",
+      "cat << EOF > /etc/sysconfig/qemu-ga",
       file("${path.root}/scripts/qemu-ga"),
-      "EOT",
+      "EOF",
       "dnf install -y policycoreutils-python-utils",
       "semanage boolean --modify --on virt_qemu_ga_read_nonsecurity_files",
-      "cat << EOT > /run/qemu_guest_agent_cloud_init_module.cil",
+      "cat << EOF > /run/qemu_guest_agent_cloud_init_module.cil",
       file("${path.root}/scripts/qemu_guest_agent_cloud_init_module.cil"),
-      "EOT",
+      "EOF",
       "semodule -i /run/qemu_guest_agent_cloud_init_module.cil",
       "dnf autoremove -y policycoreutils-python-utils",
     ]
