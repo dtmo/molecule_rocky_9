@@ -31,6 +31,7 @@ clearpart --all --initlabel
 %packages
 @^minimal-environment
 cloud-init
+cloud-utils-growpart
 qemu-guest-agent
 
 # Remove unnecessary firmware
